@@ -37,26 +37,27 @@ const db = SQLite.openDatabase("db.testDb");
       /**
    * Create method an event handler for new item creation
    */
-  newItem = () => {
-    db.transaction((tx) => {
-      // The executeSql() method has an argument intended to allow variables to be substituted into statements without risking SQL injection vulnerabilities.
-      // Always use "?" placeholders, pass the variables in as the second argument:
-      tx.executeSql(
-        "INSERT INTO items (text, count) values (?, ?)",
-        ["gibberish", 0],
-        (txObj, resultSet) =>
-          this.setState({
-            data: this.state.data.concat({
-              id: resultSet.insertId,
-              text: "gibberish",
-              count: 0,
-            }),
-          }),
-        (txObj, error) => console.log("Error", error)
-      );
-    });
-  };
-
+       newItem = () => {
+        db.transaction((tx) => {
+          let city = this.state.geocode[0].city;
+          let street = this.state.geocode[0].street;
+          // The executeSql() method has an argument intended to allow variables to be substituted into statements without risking SQL injection vulnerabilities.
+          // Always use "?" placeholders, pass the variables in as the second argument:
+          tx.executeSql(
+            "INSERT INTO items (text, count) values (?, ?)",
+            [street, 0],
+            (txObj, resultSet) =>
+              this.setState({
+                data: this.state.data.concat({
+                  id: resultSet.insertId,
+                  text: city,
+                  count: 0,
+                }),
+              }),
+            (txObj, error) => console.log("Error", error)
+          );
+        });
+      };
    /**
    * Update method an event handler for item changes
    * @param {int} id
