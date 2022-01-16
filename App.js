@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import Constants from "expo-constants";
 import * as SQLite from "expo-sqlite";
+import * as Location from 'expo-location';
+import * as Permissions from 'expo-permissions';
 // Create the client-side database if necessary and a handle/connection to the database, an object.
 const db = SQLite.openDatabase("db.testDb");
 
@@ -15,6 +17,41 @@ const db = SQLite.openDatabase("db.testDb");
  * Entry point for display to mobile
  */
  class App extends React.Component {
+
+    /**
+   *
+   */
+     componentDidMount() {
+      this.getLocationAsync();
+    }
+
+      /**
+   *
+   */
+  getLocationAsync = async () => {
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    if (status !== "granted") {
+      this.setState({
+        errorMessage: "Permission to access location was denied",
+      });
+    }
+
+    let location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.BestForNavigation,
+    });
+    const { latitude, longitude } = location.coords;
+    this.getGeocodeAsync({ latitude, longitude });
+    this.setState({ location: { latitude, longitude } });
+  };
+
+     /**
+   *
+   * @param {mixed} location
+   */
+      getGeocodeAsync = async (location) => {
+        let geocode = await Location.reverseGeocodeAsync(location);
+        this.setState({ geocode });
+      };
 
    /**
    * Read method uses arrow-function syntax
@@ -80,10 +117,6 @@ const db = SQLite.openDatabase("db.testDb");
       });
     };
 
-     /**
-   * Update method an event handler for item changes
-   * @param {int} id
-   */
     /**
    * Delete method an event handler for item removal
    * @param {int} id
@@ -114,7 +147,11 @@ const db = SQLite.openDatabase("db.testDb");
     super(props);
     this.state = {
       data: null,
+      location: null,
+      geocode: null,
+      errorMessage: "",
     };
+
     // Check if the items table exists if not create it
     db.transaction((tx) => {
       tx.executeSql(
@@ -124,18 +161,26 @@ const db = SQLite.openDatabase("db.testDb");
     // Call fetchData method die nog niet bestaat
     this.fetchData();
   }
-
+  
   /**
    * Required render, called when state is altered
    */
   render() {
+    const { location, geocode, errorMessage } = this.state;
     return (
       <View style={Style.main}>
         <Text style={Style.heading}>Add Random Name with Counts</Text>
         <TouchableOpacity onPress={this.newItem} style={Style.green}>
           <Text style={Style.white}>Add New Item</Text>
         </TouchableOpacity>
-
+        <Text style={Style.heading}>
+          {geocode ? geocode[0].street : ""}
+          {" te "}
+          {geocode ? `${geocode[0].city}, ${geocode[0].isoCountryCode}` : ""}
+        </Text>
+        <Text style={Style.heading}>
+          {location ? `${location.latitude}, ${location.longitude}` : ""}
+        </Text>
         <ScrollView style={Style.widthfull}>
           {this.state.data &&
             this.state.data.map((data) => (
@@ -156,6 +201,7 @@ const db = SQLite.openDatabase("db.testDb");
     );
   }
 }
+
 export default App;
 
 /**
